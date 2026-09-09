@@ -1,0 +1,13 @@
+# Copy relevant vars to ark-onboarding-bot/.env
+
+ARK_API_URL=https://ark.internal.ap-south-1.platform.mlops.pai.mypaytm.com/api/rpc
+ARK_API_KEY=
+
+# Session debug dispatch (Case 2 approve)
+ARK_DEFAULT_WORKSPACE=modeltest-modeltest-ark-onboarding-bot
+ARK_DEFAULT_COMPUTE=aneetta-mac
+ARK_FIX_FLOW=ark-feature
+
+# Local dev only (no Pi key) — do not use in production Helm
+ANSWER_BACKEND=cursor
+CURSOR_API_KEY=
