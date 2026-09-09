@@ -1,54 +1,57 @@
-# Ask Ark — Case 2 testing (session debug)
+# Ask Ark — Case 2 testing (planning sandbox)
 
-This branch is your **testing sandbox** for Ask Ark Case 2: diagnosis → fix plan → approve → dispatch.
+Use **this repo** as the code Ark clones and fixes. Use **ark-onboarding-bot** only to run the Ask Ark chat UI locally.
 
-## What Case 2 needs
+## Do NOT merge the two repos
 
-A failed Ark session that:
+| Repo | Purpose |
+|------|---------|
+| **planning** (this repo) | Small repo Ark dispatches against — failing test lives here |
+| **ark-onboarding-bot** | Ask Ark app — run `python -m src.web` here |
 
-1. Gets **past triage** (agent actually runs)
-2. Fails on a **code/test error** (not arkd / `986.js` infra crash)
-3. Ask Ark classifies as **needs_fix** and shows **Approve plan**
+You do **not** need to copy ark-onboarding-bot into planning.
 
-## Repos involved
+```
+┌─────────────────────┐     paste session id      ┌──────────────────────┐
+│  planning repo      │ ──── Ark clones & fails ──│  (Ark fleet)         │
+│  tests/ fail here   │                           └──────────┬───────────┘
+└─────────────────────┘                                      │
+                                                               ▼
+                                                    ┌──────────────────────┐
+                                                    │ ark-onboarding-bot     │
+                                                    │ Ask Ark reads session  │
+                                                    │ python -m src.web      │
+                                                    └──────────────────────┘
+```
 
-| Repo | Branch | Purpose |
-|------|--------|---------|
-| **aneettabiju/planning** | `case2-debug-test` | This playbook + checklist |
-| **ark-onboarding-bot** | `case2-debug-test` | Intentional failing test + Ask Ark code |
+## What's in this repo
+
+- `tests/test_case2_probe.py` — intentional failing test (Case 2 bait)
+- `scripts/dispatch-case2-test.sh` — start an Ark session against this repo
+- `CASE2-CHECKLIST.md` — step-by-step checklist
+- `TEST-LOG.md` — record session ids
 
 ## Quick start
 
-### 1. Fix or bypass triage failures
-
-Your Mac sessions fail at triage with:
-
-```text
-Cannot find module './986.js' from '/$bunfs/root/ark-darwin-arm64'
-```
-
-That is **Case 3 (infra)**, not Case 2. Do **not** use Cursor runtime until arkd is fixed.
-
-When dispatching, omit `--runtime cursor` / do not set cursor as launch executor.
-
-### 2. Enable the probe test (ark-onboarding-bot)
-
-On `ark-onboarding-bot` branch `case2-debug-test`, edit `tests/test_case2_probe.py` and remove the `@unittest.skipUnless` decorator so the test always fails.
-
-Push that branch to the repo your Ark workspace clones.
-
-### 3. Dispatch a test session
-
-From `ark-onboarding-bot`:
+### 1. Push this branch (with the failing test)
 
 ```bash
-source .env   # ARK_API_KEY required
+cd ~/planning
+git add tests/ scripts/ README.md
+git commit -m "Add Case 2 probe test and dispatch script"
+git push origin case2-debug-test
+```
+
+### 2. Dispatch an Ark session (clones planning)
+
+```bash
+source ~/ark-onboarding-bot/.env   # ARK_API_KEY
 ./scripts/dispatch-case2-test.sh
 ```
 
-Copy the `s-...` session id. Wait until status is `failed` at stage **verify** or **implement** (not triage).
+Copy the `s-...` session id. Wait until it fails at **verify/implement** (not triage).
 
-### 4. Test in Ask Ark
+### 3. Debug in Ask Ark (different folder)
 
 ```bash
 cd ~/ark-onboarding-bot
@@ -56,24 +59,21 @@ source .venv/bin/activate
 python -m src.web
 ```
 
-Paste the session id → expect **Needs fix** + fix plan + **Approve plan** button.
+Open http://127.0.0.1:8765 and paste the session id.
 
-### 5. Approve plan (optional)
+### 4. Approve plan (optional)
 
-In `ark-onboarding-bot` `.env`:
+Set in `~/ark-onboarding-bot/.env`:
 
 ```bash
-ARK_DEFAULT_WORKSPACE=modeltest-modeltest-ark-onboarding-bot
+ARK_DEFAULT_WORKSPACE=...
 ARK_DEFAULT_COMPUTE=aneetta-mac
-ARK_FIX_FLOW=ark-feature
 ```
 
-Click **Approve plan** to dispatch a fix session.
+## If dispatch fails
 
-## Checklist
+- **`flow: default` not found** — your tenant may need a different flow name; ask in #foundry-users or use a workspace that lists `aneettabiju/planning` as a repo.
+- **Still fails at triage with `986.js`** — cursor/arkd issue on your Mac; do not use cursor runtime.
+- **Case 3 instead of Case 2** — session died before tests ran; see checklist.
 
 See [CASE2-CHECKLIST.md](./CASE2-CHECKLIST.md).
-
-## Status log
-
-Use [TEST-LOG.md](./TEST-LOG.md) to record session ids and results.
